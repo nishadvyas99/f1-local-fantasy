@@ -8,6 +8,9 @@
 # testing
 /coverage
 
+# macOS Finder
+**/.DS_Store
+
 # Environment files
 **/.env
 
