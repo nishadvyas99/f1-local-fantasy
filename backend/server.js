@@ -21,6 +21,9 @@ app.use('/api/auth', authRouter);    // ← THIS mounts POST /api/auth/register
 const gridRouter = require('./routes/grid');
 app.use('/api/grid', gridRouter);
 
+// ─── PREDICTIONS ROUTES ───────────────────
+const predictionsRouter = require('./routes/predictions');
+app.use('/api/predictions', predictionsRouter);
 
 
 // Connect to MongoDB (replace `<your_connection_string>` accordingly)
