@@ -15,6 +15,7 @@ export default function Home() {
       {token ? (
         <>
           <p>You’re logged in!</p>
+          <Link to="/predictions"><button>Predictions</button></Link>
           <button onClick={handleLogout}>Logout</button>
         </>
       ) : (

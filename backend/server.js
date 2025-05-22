@@ -17,6 +17,14 @@ app.get('/', (req, res) => {
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);    // ← THIS mounts POST /api/auth/register
 
+// race grid router
+const gridRouter = require('./routes/grid');
+app.use('/api/grid', gridRouter);
+
+// ─── PREDICTIONS ROUTES ───────────────────
+const predictionsRouter = require('./routes/predictions');
+app.use('/api/predictions', predictionsRouter);
+
 
 // Connect to MongoDB (replace `<your_connection_string>` accordingly)
 mongoose.connect(process.env.MONGO_URI, {
