@@ -25,6 +25,9 @@ app.use('/api/grid', gridRouter);
 const predictionsRouter = require('./routes/predictions');
 app.use('/api/predictions', predictionsRouter);
 
+// fire up the schedular
+require('./scheduler');
+
 
 // Connect to MongoDB (replace `<your_connection_string>` accordingly)
 mongoose.connect(process.env.MONGO_URI, {

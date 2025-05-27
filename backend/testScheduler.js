@@ -11,6 +11,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const { getSchedule, getNextRace } = require('./scheduler');
 const { fetchStartingGrid } = require('../backend/services/fetchGrid');
+const { fetchRaceResults } = require('../backend/services/fetchResult')
 const Race = require('./models/Race');
 
 async function test() {
@@ -54,6 +55,17 @@ async function test() {
       { upsert: true, new: true }
     );
     console.log('💾 Race document upserted:', updatedRace);
+
+    // Fetch and upsert the race results
+    const results = await fetchRaceResults(season, next.raceName);
+    console.log('🏁 Fetched race results:', results);
+
+    raceDoc = await Race.findOneAndUpdate(
+      { season: Number(season), round: next.round },
+      { results, updatedAt: new Date() },
+      { new: true }
+    );
+    console.log('💾 Race document after results upsert:', raceDoc);
 
     process.exit(0);
   } catch (err) {

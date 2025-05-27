@@ -1,6 +1,3 @@
-
-
-
 // backend/scheduler.js
 
 const cron = require('node-cron');
@@ -8,6 +5,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 const { fetchStartingGrid } = require('./services/fetchGrid');
 const Race = require('./models/Race');
+const { fetchRaceResults } = require('./services/fetchResult');
+const Prediction = require('./models/Prediction');
 
 /**
  * Runs the Python script to get the full season schedule via FastF1.
@@ -43,16 +42,26 @@ function getSchedule(season) {
  * Given a schedule array, returns the next race whose date >= today.
  */
 function getNextRace(schedule) {
+    // const today = new Date().toISOString().slice(0, 10);
+    // const pastRaces = schedule.filter(r => r.date <= today);
+    // return pastRaces.length ? pastRaces[pastRaces.length - 1] : null;
+
+    const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    return schedule.find(r => r.date >= today) || null;
+}
+
+function getPastRace(schedule) {
     const today = new Date().toISOString().slice(0, 10);
     const pastRaces = schedule.filter(r => r.date <= today);
     return pastRaces.length ? pastRaces[pastRaces.length - 1] : null;
 
-//   const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-//   return schedule.find(r => r.date >= today) || null;
+    // const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    // return schedule.find(r => r.date >= today) || null;
 }
 
 // Schedule: every Saturday at 18:00 Toronto time
-cron.schedule('0 18 * * SAT', async () => {
+//cron.schedule('* * * * *', async () => {
+cron.schedule('00 18 * * SAT', async () => {
   console.log('[Scheduler] Saturday grid fetch starting...');
   try {
     const season = new Date().getFullYear().toString();
@@ -87,6 +96,69 @@ cron.schedule('0 18 * * SAT', async () => {
 }, {
   timezone: 'America/Toronto'
 });
+
+// Schedule: every Sunday at 18:00 Toronto time to update race results
+//cron.schedule('*/2 * * * *', async () => {
+cron.schedule('0 18 * * SUN', async () => {
+  console.log('[Scheduler] Sunday result fetch starting...');
+  try {
+    const season   = new Date().getFullYear().toString();
+    const schedule = await getSchedule(season);
+    console.log('[Scheduler] Season schedule loaded.');
+
+    const lastRace = getPastRace(schedule);
+    if (!lastRace) {
+      console.log('[Scheduler] No past race found to fetch results for.');
+      return;
+    }
+    console.log(`[Scheduler] Fetching results for: ${lastRace.raceName} (Round ${lastRace.round})`);
+
+    // Fetch results from your service
+    const results = await fetchRaceResults(season, lastRace.raceName);
+    console.log('[Scheduler] Fetched race results:', results);
+
+    // Upsert results into MongoDB
+    await Race.findOneAndUpdate(
+      { season: Number(season), round: lastRace.round },
+      { results, updatedAt: new Date() },
+      { upsert: false }
+    );
+    console.log('[Scheduler] Race results updated in database.');
+
+    // 4) Score all user predictions for this race
+    const preds = await Prediction.find({
+      season: Number(season),
+      round:  lastRace.round
+    });
+
+    for (const pred of preds) {
+      let totalScore = 0;
+
+      pred.picks.forEach((driver, idx) => {
+        const predictedPos = idx + 1;
+        const actualEntry  = results.find(r => r.driver === driver);
+        if (!actualEntry) return;
+        const actualPos = parseInt(actualEntry.position, 10);
+        const diff = Math.abs(predictedPos - actualPos);
+        if (diff === 0) totalScore += 2;
+        else if (diff === 1) totalScore += 1;
+      });
+
+      // Update only the score field
+      await Prediction.updateOne(
+        { _id: pred._id },
+        { $set: { score: totalScore } }
+      );
+      console.log(`[Scheduler] Scored Prediction ${pred._id}: ${totalScore} pts`);
+    }
+  } catch (err) {
+    console.error('[Scheduler] Error in results fetch job:', err);
+  }
+}, {
+  timezone: 'America/Toronto'
+});
+
+
 
 // Export functions for testing
 module.exports = { getSchedule, getNextRace };

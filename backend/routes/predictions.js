@@ -34,4 +34,27 @@ router.post('/', async (req, res) => {
   }
 });
 
+
+/**
+ * GET /api/predictions/:season/:round
+ * Returns the authenticated user’s saved picks and score for a specific race.
+ */
+router.get('/:season/:round', async (req, res) => {
+  try {
+    const { season, round } = req.params;
+    const pred = await Prediction.findOne({
+      userId: req.user.id,
+      season: Number(season),
+      round:  Number(round)
+    }).select('picks score season round');
+    if (!pred) {
+      return res.status(404).json({ error: 'Prediction not found' });
+    }
+    res.json(pred);
+  } catch (err) {
+    console.error('Error fetching prediction:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
