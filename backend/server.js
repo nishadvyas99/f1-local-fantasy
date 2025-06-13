@@ -2,6 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,8 +26,20 @@ app.use('/api/grid', gridRouter);
 const predictionsRouter = require('./routes/predictions');
 app.use('/api/predictions', predictionsRouter);
 
+// Leaderboard route
+const leaderboardRouter = require('./routes/leaderboard');
+app.use('/api/leaderboard', leaderboardRouter);
+
 // fire up the schedular
 require('./scheduler');
+
+// Serve React static assets
+app.use(express.static(path.join(__dirname,'..', 'client/build')));
+// Fallback: serve React's index.html for any request not handled by API or static files
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname,'..', 'client/build', 'index.html'));
+});
+
 
 
 // Connect to MongoDB (replace `<your_connection_string>` accordingly)

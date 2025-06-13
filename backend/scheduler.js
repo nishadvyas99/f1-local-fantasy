@@ -61,14 +61,14 @@ function getPastRace(schedule) {
 
 // Schedule: every Saturday at 18:00 Toronto time
 //cron.schedule('* * * * *', async () => {
-cron.schedule('00 18 * * SAT', async () => {
+cron.schedule('37 23 * * WED', async () => {
   console.log('[Scheduler] Saturday grid fetch starting...');
   try {
     const season = new Date().getFullYear().toString();
     const schedule = await getSchedule(season);
     console.log('[Scheduler] Season schedule loaded.');
 
-    const next = getNextRace(schedule);
+    const next = getPastRace(schedule);
     if (!next) {
       console.log('[Scheduler] No upcoming race found in schedule.');
       return;
@@ -99,7 +99,7 @@ cron.schedule('00 18 * * SAT', async () => {
 
 // Schedule: every Sunday at 18:00 Toronto time to update race results
 //cron.schedule('*/2 * * * *', async () => {
-cron.schedule('0 18 * * SUN', async () => {
+cron.schedule('40 23 * * WED', async () => {
   console.log('[Scheduler] Sunday result fetch starting...');
   try {
     const season   = new Date().getFullYear().toString();
@@ -161,4 +161,4 @@ cron.schedule('0 18 * * SUN', async () => {
 
 
 // Export functions for testing
-module.exports = { getSchedule, getNextRace };
+module.exports = { getSchedule, getNextRace, getPastRace };

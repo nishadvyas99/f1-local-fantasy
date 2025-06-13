@@ -17,28 +17,44 @@ export default function Login() {
     try {
       const res = await axios.post('/api/auth/login', form);
       localStorage.setItem('token', res.data.token);
-      navigate('/'); // redirect to home or dashboard
+      navigate('/'); // redirect to home page
     } catch (err) {
-      setError(err.response?.data?.msg || 'Login failed');
+      setError(err.response?.data?.error || 'Login failed');
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '2rem auto' }}>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email</label><br/>
-          <input type="email" name="email" value={form.email} onChange={handleChange} required />
-        </div>
-        <div>
-          <label>Password</label><br/>
-          <input type="password" name="password" value={form.password} onChange={handleChange} required />
-        </div>
-        <button type="submit" style={{ marginTop: '1rem' }}>Login</button>
-      </form>
-      <p>New here? <Link to="/register">Register</Link></p>
+    <div className="container">
+      <div className="card" style={{ maxWidth: 400, margin: '2rem auto' }}>
+        <h2>Login</h2>
+        {error && <p style={{ color: 'salmon' }}>{error}</p>}
+        <form onSubmit={handleSubmit}>
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter password"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
+          <button className="primary" type="submit" style={{ width: '100%' }}>
+            Login
+          </button>
+        </form>
+        <p style={{ marginTop: '1rem' }}>
+          Don’t have an account? <Link to="/register">Register</Link>
+        </p>
+      </div>
     </div>
   );
 }
