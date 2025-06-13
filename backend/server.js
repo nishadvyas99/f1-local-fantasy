@@ -10,10 +10,6 @@ const PORT = process.env.PORT || 5000;
 // Middleware for parsing JSON
 app.use(express.json());
 
-// Define a simple route
-app.get('/', (req, res) => {
-  res.send('Hello from Express!');
-});
 
 const authRouter = require('./routes/auth');
 app.use('/api/auth', authRouter);    // ← THIS mounts POST /api/auth/register
