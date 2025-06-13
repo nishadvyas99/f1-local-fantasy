@@ -27,7 +27,8 @@ export default function Navbar({ isAuthenticated }) {
               <button
                 onClick={() => {
                   localStorage.removeItem('token');
-                  navigate('/login');
+                  // Reload so App re-reads localStorage and shows Login/Register links
+                  window.location.href = '/login';
                 }}
                 className="secondary"
                 style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
