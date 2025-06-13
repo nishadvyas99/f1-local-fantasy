@@ -87,7 +87,10 @@ export default function Predictions() {
         }
       }
     )
-      .then(() => alert('Prediction saved!'))
+      .then(() => {
+        alert('Prediction saved!');
+        window.location.reload();
+      })
       .catch(err => alert('Error saving prediction: ' + err.message));
   };
 
@@ -95,99 +98,128 @@ export default function Predictions() {
     <div style={{ padding: '1rem', maxWidth: 600, margin: 'auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>Make Your Predictions</h2>
-        <button onClick={() => { localStorage.removeItem('token'); navigate('/'); }}
-          style={{ padding: '0.5rem 1rem' }}>
-          Logout
-        </button>
       </div>
 
       {/* Race Tabs */}
       <div style={{ display: 'flex', overflowX: 'auto', marginBottom: '1rem' }}>
-        {races.map(r => (
-          <button
-            key={r.round}
-            onClick={() => {
-              setSelectedRace(r);
-              setExpandedRound(expandedRound === r.round ? null : r.round);
-            }}
-            style={{
-              padding: '0.5rem 1rem',
-              marginRight: '0.5rem',
-              border: selectedRace?.round === r.round ? '2px solid #007bff' : '1px solid #ccc',
-              background: selectedRace?.round === r.round ? '#e7f3ff' : '#fff',
-              cursor: 'pointer'
-            }}
-          >
-            {r.raceName}
-          </button>
-        ))}
+          {races.map(r => {
+          const isPast = Date.now() >= new Date(r.sessionStart).getTime();
+          return (
+            <button
+              key={r.round}
+              disabled={isPast}
+              onClick={() => {
+                if (isPast) return;
+                setSelectedRace(r);
+                setExpandedRound(prev => prev === r.round ? null : r.round);
+              }}
+              style={{
+                padding: '0.5rem 1rem',
+                marginRight: '0.5rem',
+                border: selectedRace?.round === r.round ? '2px solid #007bff' : '1px solid #ccc',
+                background: selectedRace?.round === r.round ? '#e7f3ff' : '#fff',
+                opacity: isPast ? 0.5 : 1,
+                cursor: isPast ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {r.raceName}
+            </button>
+          );
+        })}
       </div>
 
       {/* Expanded Grid & Prediction Section */}
-      {selectedRace && expandedRound === selectedRace.round && (
-        <>
-          <div style={{ marginBottom: '1rem' }}>
-            {score != null
-              ? <p>Your current score: <strong>{score}</strong></p>
-              : <p>You have not made a prediction yet.</p>
-            }
-          </div>
-          <h3>Starting Grid — Drag & Drop to Predict Top 10 ({selectedRace.raceName})</h3>
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="grid-droppable">
-              {(provided) => (
-                <ul
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  style={{ listStyle: 'none', padding: 0 }}
-                >
-                  {order.map((driver, index) => (
-                    <Draggable key={driver} draggableId={driver} index={index} isDragDisabled={hasPrediction}>
-                      {(prov) => (
-                        <li
-                          ref={prov.innerRef}
-                          {...prov.draggableProps}
-                          {...prov.dragHandleProps}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '0.75rem',
-                            margin: '0.25rem 0',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            background: '#fafafa',
-                            ...prov.draggableProps.style
-                          }}
-                        >
-                          <span style={{ width: 24, marginRight: 8 }}>{index + 1}</span>
-                          <span>{driver}</span>
-                        </li>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </ul>
-              )}
-            </Droppable>
-          </DragDropContext>
+        {selectedRace && expandedRound === selectedRace.round && (() => {
+        const now = Date.now();
+        const sessionStartMs = new Date(selectedRace.sessionStart).getTime();
+        const isPastRace = now >= sessionStartMs;
 
-          <button
-            onClick={handleSubmit}
-            disabled={hasPrediction}
-            style={{
-              marginTop: '1rem',
-              padding: '0.5rem 1rem',
-              background: hasPrediction ? '#ccc' : '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              cursor: hasPrediction ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {hasPrediction ? 'Prediction Locked' : 'Submit Prediction'}
-          </button>
-        </>
-      )}
-    </div>
+        return (
+          <>
+              <div style={{ marginBottom: '1rem' }}>
+              {score != null
+                ? <p>Your current score: <strong>{score}</strong></p>
+                : <p>You have not made a prediction yet.</p>
+              }
+            </div>
+
+            {isPastRace ? (
+              // Read-only results
+              <>
+                <h3>Results — {selectedRace.raceName}</h3>
+                <ol>
+                  {grid.map((entry, idx) => (
+                    <li key={idx}>{entry.position}. {entry.driver}</li>
+                  ))}
+                                  </ol>
+              </>
+            ) : (
+              // Prediction UI
+              <>
+                <h3>Starting Grid — Predict Top 10 ({selectedRace.raceName})</h3>
+                <DragDropContext onDragEnd={onDragEnd}>
+                  <Droppable droppableId="grid-droppable">
+                    {provided => (
+                      <ul
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        style={{ listStyle: 'none', padding: 0 }}
+                      >
+                        {order.map((driver, index) => (
+                          <Draggable
+                            key={driver}
+                            draggableId={driver}
+                            index={index}
+                            isDragDisabled={hasPrediction}
+                          >
+                            {prov => (
+                              <li
+                                ref={prov.innerRef}
+                                {...prov.draggableProps}
+                                {...prov.dragHandleProps}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  padding: '0.75rem',
+                                  margin: '0.25rem 0',
+                                  border: '1px solid #ccc',
+                                  borderRadius: '4px',
+                                  background: '#000',
+                                  ...prov.draggableProps.style
+                                }}
+                              >
+                                <span style={{ width: 24, marginRight: 8 }}>{index + 1}</span>
+                                <span>{driver}</span>
+                              </li>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </ul>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+
+                                <button
+                  onClick={handleSubmit}
+                  disabled={hasPrediction}
+                  style={{
+                    marginTop: '1rem',
+                    padding: '0.5rem 1rem',
+                    background: hasPrediction ? '#ccc' : '#007bff',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 4,
+                    cursor: hasPrediction ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {hasPrediction ? 'Prediction Locked' : 'Submit Prediction'}
+                </button>
+              </>
+            )}
+          </>
+        );
+      })()}
+        </div>
   );
 }
