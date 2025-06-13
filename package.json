@@ -6,7 +6,9 @@
   "scripts": {
     "client": "npm start --prefix client",
     "server": "npm run dev --prefix backend",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "postinstall": "npm install --prefix client && npm run build --prefix client",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
