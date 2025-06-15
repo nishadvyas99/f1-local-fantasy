@@ -61,7 +61,7 @@ function getPastRace(schedule) {
 
 // Schedule: every Saturday at 18:00 Toronto time
 //cron.schedule('* * * * *', async () => {
-cron.schedule('37 23 * * WED', async () => {
+cron.schedule('40 20 * * SAT', async () => {
   console.log('[Scheduler] Saturday grid fetch starting...');
   try {
     const season = new Date().getFullYear().toString();
@@ -99,7 +99,7 @@ cron.schedule('37 23 * * WED', async () => {
 
 // Schedule: every Sunday at 18:00 Toronto time to update race results
 //cron.schedule('*/2 * * * *', async () => {
-cron.schedule('40 23 * * WED', async () => {
+cron.schedule('0 18 * * SUN', async () => {
   console.log('[Scheduler] Sunday result fetch starting...');
   try {
     const season   = new Date().getFullYear().toString();
